@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from openai import OpenAI
@@ -23,14 +24,18 @@ def chat_stream(messages):
         stream=True,
     ) as stream:
         for chunk in stream:
-            if chunk.choices and len(chunk.choices) > 0 and chunk.choices[0].delta and chunk.choices[0].delta.content:
+            if (
+                chunk.choices
+                and len(chunk.choices) > 0
+                and chunk.choices[0].delta
+                and chunk.choices[0].delta.content
+            ):
                 yield chunk.choices[0].delta.content
 
 
 @app.route("/")
 def index():
-    return render_template_string(
-        """
+    return render_template_string("""
         <!doctype html>
         <html lang="en">
         <head>
@@ -925,22 +930,21 @@ def index():
             </script>
         </body>
         </html>
-        """
-    )
+        """)
 
 
 @app.route("/api/chat-stream", methods=["POST"])
 def api_chat_stream():
     body = request.get_json(force=True, silent=True) or {}
     messages = body.get("messages", [])
-    
+
     def generate():
         try:
             for chunk in chat_stream(messages):
                 yield chunk
         except Exception as e:
             yield f"Error: {str(e)}"
-    
+
     return Response(generate(), mimetype="text/plain")
 
 
